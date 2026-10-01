@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# Environment variables (secrets, API keys)
+.env
+
+# Data files (too large for Git)
+data/raw/
+data/processed/
+data/curated/
+*.parquet
+*.csv
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ML models (too large)
+*.pkl
+*.joblib
