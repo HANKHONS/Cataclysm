@@ -34,7 +34,7 @@ Different storage for different purposes. You don't dump 5 million raw events in
 |---|---|
 | fastapi | Python API server |
 | kafka | Message streaming |
-| zookeeper | Required by Kafka for coordination |
+| broker | Kafka broker |
 | spark-master | Spark driver (plans the work) |
 | spark-worker | Spark executor (does the work) — scalable to 2, 4 workers |
 | postgres | PostgreSQL database |
