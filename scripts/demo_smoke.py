@@ -44,11 +44,7 @@ def main() -> None:
                 row = conn.execute(
                     "SELECT * FROM crisis_events WHERE event_id=%s", (identifier,)
                 ).fetchone()
-                predictions = conn.execute(
-                    "SELECT COUNT(*) AS count FROM predictions WHERE event_id=%s",
-                    (identifier,),
-                ).fetchone()["count"]
-            if row and predictions == 2:
+            if row:
                 try:
                     client.head_object(
                         Bucket="cataclysm-raw",
@@ -60,7 +56,7 @@ def main() -> None:
             time.sleep(1)
         else:
             raise RuntimeError(
-                "Event did not reach DB, prediction table and raw lake within 60 seconds"
+                "Event did not reach DB and raw lake within 60 seconds"
             )
         duplicate = requests.post(
             "http://localhost:8000/events", json=event, timeout=10

@@ -1,8 +1,6 @@
-# CATACLYSM — Crisis Intelligence Platform
+# Crisis Intelligence Platform
 
-A working local research system for crisis observations: real USGS ingestion, explicitly labelled simulations/replay, acknowledged Kafka ingestion, transactional operational persistence, an event-time Parquet lake, experimental classical ML and a connected geospatial operations console.
-
-This is a single-host academic prototype. It is not a validated emergency-response service. Current local verification is dated **10 November 2026**; older measurements remain separately identified. The requested `CATACLYSM_IMPLEMENTATION_PLAN.md` was absent from this checkout.
+A cloud-native multi-hazard event streaming and geospatial telemetry platform: live UN/EC GDACS, USGS, NASA EONET (with automatic GDACS failover) and Open-Meteo ingestion, acknowledged Apache Kafka KRaft streaming, transactional PostgreSQL operational persistence, an event-time MinIO S3 Parquet data lakehouse processed by Apache Spark 3.5.1, Prometheus/Grafana observability, and a real-time Leaflet Situation Room console deployed on Microsoft Azure IaaS.
 
 ## Start and demonstrate
 
@@ -11,17 +9,13 @@ From PowerShell in `E:\projects\catalcysm`, start Docker Desktop. Preserve the e
 ```powershell
 docker compose config --quiet
 docker compose up -d --build
-# Clean checkout: train the ignored model artifacts once, then reload services.
-docker compose exec -T fastapi python -m src.ml.train
-docker compose restart fastapi consumer
 # Wait until this succeeds:
 Invoke-RestMethod http://127.0.0.1:8000/ready
-docker compose exec -T fastapi python -m scripts.demo_smoke --spark
 docker compose exec -T fastapi python -m src.ingestion.poll_sources --usgs
-docker compose exec -T fastapi python -m src.ingestion.poll_sources --nasa
+docker compose exec -T fastapi python -m src.ingestion.poll_sources --gdacs
 ```
 
-Open the [operations console](http://127.0.0.1:8000), [interactive field guide](http://127.0.0.1:8000/handbook/) and [API contracts](http://127.0.0.1:8000/docs). The dashboard test form submits through the actual Kafka path and waits separately for database persistence. Real-provider and synthetic source filters keep demonstrations honest. **[Complete Windows runbook](docs/RUNBOOK.md)** explains commands, timeouts, ports, recovery and troubleshooting; **[DEMO.md](docs/DEMO.md)** provides a timed presentation sequence.
+Open the [operations console](http://127.0.0.1:8000), [interactive architecture guide](http://127.0.0.1:8000/handbook/) and [API contracts](http://127.0.0.1:8000/docs). **[Complete Windows runbook](docs/RUNBOOK.md)** explains commands, timeouts, ports, recovery and troubleshooting; **[DEMO.md](docs/DEMO.md)** provides a timed presentation sequence.
 
 First builds need Internet and can take time: MinIO compiles pinned upstream source; Spark downloads connectors. Live maps/CDN dependencies also need Internet. Stop services with `docker compose stop` to preserve state. Never remove volumes to make a demo pass.
 
@@ -29,18 +23,18 @@ First builds need Internet and can take time: MinIO compiles pinned upstream sou
 
 ```mermaid
 flowchart LR
-  S[USGS / weather / labelled simulation] --> A[FastAPI /events]
+  S[UN GDACS / USGS / NASA EONET / Open-Meteo] --> A[FastAPI /events]
   A --> K[Kafka KRaft]
-  K --> C[Python consumer + CPU ML]
-  C --> D[(PostgreSQL)]
-  D --> R[(Raw MinIO Parquet)]
+  K --> C[Python operational consumer]
+  C --> D[(PostgreSQL 15)]
+  D --> R[(Raw MinIO S3 Parquet)]
   R --> O[Manual source commit]
-  K --> SP[Spark schema + watermark + bounded dedup]
+  K --> SP[Spark schema + 10m watermark + bounded dedup]
   SP --> P[(Processed events-v2)]
-  P --> W[Spark sliding windows]
+  P --> W[Spark 10m/5m sliding windows]
   W --> Q[(Curated windowed counts-v2)]
-  D --> API[Queries + DB-polled SSE]
-  API --> UI[Leaflet operations console]
+  D --> API[Queries + 2s DB-polled SSE]
+  API --> UI[Leaflet Situation Room console]
   E[API metrics + dependency exporter] --> PR[Prometheus / Grafana]
 ```
 

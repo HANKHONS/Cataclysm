@@ -5,8 +5,6 @@ from confluent_kafka import Consumer, Producer, KafkaError
 from src.common.config import config
 from src.common.db import get_pool, init_db
 from src.common.models import CrisisEvent, DLQMessage
-from src.ml.inference import predict_disaster_type, predict_severity
-from src.ml.inference import model_status
 from psycopg.types.json import Jsonb
 from src.storage.lake_writer import ParquetLakeWriter
 
@@ -119,28 +117,13 @@ def run_consumer():
             consumer.commit(message=msg, asynchronous=False)
             continue
 
-        # ML Enrichment
+        # Operational telemetry normalization
         meta = event_data.get("metadata", {}) or {}
-        pred_type, type_conf = predict_disaster_type(event_data.get("text", ""))
-        pred_sev, sev_conf = predict_severity(
-            rainfall_mm=meta.get("rainfall_mm"),
-            water_level_m=meta.get("water_level_m"),
-            wind_speed_kmh=meta.get("wind_speed_kmh"),
-            temperature_c=meta.get("temperature_c"),
-        )
-
-        # Preserve the legacy field for the classifier score only. Averaging
-        # probabilities from unrelated classifiers has no joint-probability meaning.
-        overall_conf = round(type_conf, 3)
-        event_data["predicted_disaster_type"] = pred_type
-        event_data["predicted_severity"] = pred_sev
-        event_data["prediction_confidence"] = overall_conf
-
         record = {
             "event_id": event_data["event_id"],
             "timestamp": event_data["timestamp"],
-            "disaster_type": event_data.get("disaster_type", pred_type),
-            "severity": event_data.get("severity", pred_sev),
+            "disaster_type": event_data.get("disaster_type", "unknown"),
+            "severity": event_data.get("severity", "unknown"),
             "location": event_data.get("location", "Unknown"),
             "latitude": float(event_data.get("latitude", 0.0)),
             "longitude": float(event_data.get("longitude", 0.0)),
@@ -150,9 +133,9 @@ def run_consumer():
             "water_level_m": meta.get("water_level_m"),
             "wind_speed_kmh": meta.get("wind_speed_kmh"),
             "temperature_c": meta.get("temperature_c"),
-            "predicted_disaster_type": pred_type,
-            "predicted_severity": pred_sev,
-            "prediction_confidence": overall_conf,
+            "predicted_disaster_type": None,
+            "predicted_severity": None,
+            "prediction_confidence": None,
         }
 
         # Bounded retry loop for database persistence
@@ -197,35 +180,6 @@ def run_consumer():
                                     offset,
                                 ),
                             )
-                            status = model_status()
-                            if type_conf == 0:
-                                status["classifier"] = "heuristic"
-                            if sev_conf == 0:
-                                status["severity"] = (
-                                    "unavailable"
-                                    if pred_sev == "unknown"
-                                    else "heuristic"
-                                )
-                            for name, label, confidence, provenance in (
-                                (
-                                    "classifier",
-                                    pred_type,
-                                    type_conf,
-                                    status["classifier"],
-                                ),
-                                ("severity", pred_sev, sev_conf, status["severity"]),
-                            ):
-                                cur.execute(
-                                    "INSERT INTO predictions(event_id,model_name,predicted_label,confidence,provenance) "
-                                    "VALUES (%s,%s,%s,%s,%s) ON CONFLICT(event_id,model_name) DO NOTHING",
-                                    (
-                                        record["event_id"],
-                                        name,
-                                        label,
-                                        confidence if provenance == "trained" else None,
-                                        provenance,
-                                    ),
-                                )
                 db_success = True
                 break
             except Exception as dbe:

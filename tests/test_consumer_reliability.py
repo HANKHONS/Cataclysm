@@ -19,8 +19,6 @@ def test_database_failure_does_not_commit_or_read_past_record():
         patch.object(module, "init_db"),
         patch.object(module, "get_pool", return_value=pool),
         patch.object(module.time, "sleep"),
-        patch.object(module, "predict_disaster_type", return_value=("flood", 0)),
-        patch.object(module, "predict_severity", return_value=("minor", 0)),
     ):
         with pytest.raises(RuntimeError, match="Database retries exhausted"):
             module.run_consumer()
@@ -67,13 +65,6 @@ def test_archive_failure_after_transaction_does_not_commit():
         patch.object(module, "init_db"),
         patch.object(module, "get_pool", return_value=pool),
         patch.object(module, "ParquetLakeWriter", return_value=lake),
-        patch.object(module, "predict_disaster_type", return_value=("flood", 0)),
-        patch.object(module, "predict_severity", return_value=("unknown", 0)),
-        patch.object(
-            module,
-            "model_status",
-            return_value={"classifier": "heuristic", "severity": "heuristic"},
-        ),
     ):
         with pytest.raises(OSError, match="unavailable archive"):
             module.run_consumer()

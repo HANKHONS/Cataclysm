@@ -16,7 +16,6 @@ from confluent_kafka import Producer, KafkaException
 from src.common.config import config
 from src.common.models import CrisisEvent
 from src.common.db import get_pool, init_db, close_pool
-from src.ml.inference import model_status
 from src.api.queries import event_filter, read_rows, provenance
 from prometheus_fastapi_instrumentator import Instrumentator
 
@@ -26,8 +25,8 @@ logging.basicConfig(
 logger = logging.getLogger("cataclysm.api")
 
 app = FastAPI(
-    title="Cataclysm Crisis Intelligence API",
-    description="Real-Time Disaster Telemetry Ingestion, Streaming & Intelligence Platform",
+    title="Crisis Intelligence Platform API",
+    description="Real-Time Disaster Telemetry Ingestion, Streaming & Geospatial Platform",
     version="1.0.0",
 )
 Instrumentator().instrument(app).expose(
@@ -84,19 +83,7 @@ def serve_dashboard():
     """Serves the interactive crisis operations dashboard."""
     if os.path.exists(STATIC_INDEX):
         return FileResponse(STATIC_INDEX)
-    return {"message": "Cataclysm Disaster API is online. Static dashboard not found."}
-
-
-@app.get("/api/models")
-def get_models():
-    return model_status()
-
-
-@app.get("/api/anomalies")
-def get_anomalies():
-    return read_rows(
-        "SELECT * FROM anomaly_windows ORDER BY window_start DESC LIMIT 100"
-    )
+    return {"message": "Crisis Intelligence Platform API is online. Static dashboard not found."}
 
 
 @app.get("/incidents")
@@ -298,11 +285,7 @@ def event_details(event_id: str):
     )
     if not rows:
         raise HTTPException(404, "Event not found")
-    result = provenance(rows[0])
-    result["predictions"] = read_rows(
-        "SELECT * FROM predictions WHERE event_id=%s ORDER BY model_name", [event_id]
-    )
-    return result
+    return provenance(rows[0])
 
 
 @app.get("/api/pipeline")

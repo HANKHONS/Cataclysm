@@ -327,8 +327,6 @@ async function health() {
   const parts = await Promise.allSettled([
     get("/health"),
     get("/api/pipeline"),
-    get("/api/models"),
-    get("/api/anomalies"),
   ]);
   const h = parts[0].status === "fulfilled" ? parts[0].value : null;
   const m = parts[1].status === "fulfilled" ? parts[1].value.metrics : {};

@@ -220,17 +220,6 @@ services:
       MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD:?set in .env}
     volumes: [.:/app]
 
-  anomaly-worker:
-    image: catalcysm-fastapi:demo
-    build: .
-    command: python -m src.ml.detect_anomalies --interval 300
-    restart: on-failure
-    depends_on:
-      db: {condition: service_healthy}
-    environment:
-      DATABASE_URL: postgresql://cataclysm:${POSTGRES_PASSWORD:?set in .env}@db:5432/cataclysm
-    volumes: [.:/app]
-
   grafana:
     image: grafana/grafana:11.4.0
     ports: ["127.0.0.1:3000:3000"]
