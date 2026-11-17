@@ -1,0 +1,13 @@
+{
+  "observed_at": "2026-11-10T11:16:43.536402+00:00",
+  "event_id": "CRASH-af799af880fe4a8c",
+  "topic": "verification-f3839e79051a",
+  "group": "verification-f3839e79051a-group",
+  "crash_exit": 91,
+  "rows_before_replay": 1,
+  "rows_after_replay": 1,
+  "offset_before_replay": -1001,
+  "offset_after_replay": 1,
+  "prediction_rows": 2,
+  "scope": "Actual consumer process exits after database transaction and before raw archive/offset commit; isolated retained Kafka topic."
+}

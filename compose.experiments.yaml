@@ -1,0 +1,6 @@
+# Use only during controlled scaling experiments, after stopping spark-streaming.
+services:
+  spark-worker:
+    container_name: !reset null
+    hostname: !reset null
+    ports: !reset []

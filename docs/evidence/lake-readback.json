@@ -1,0 +1,14 @@
+{
+  "raw": {
+    "parquet_files": 922,
+    "rows": 922
+  },
+  "processed": {
+    "parquet_files": 43,
+    "rows": 737
+  },
+  "curated": {
+    "parquet_files": 50,
+    "rows": 49
+  }
+}

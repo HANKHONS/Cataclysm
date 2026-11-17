@@ -1,0 +1,10 @@
+.git
+venv
+.venv
+.env
+transcripts
+work
+data
+__pycache__
+*.pyc
+*.pptx

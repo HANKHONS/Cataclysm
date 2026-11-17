@@ -1,0 +1,17 @@
+{
+  "uid": "cataclysm-api",
+  "title": "Cataclysm API",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "15s",
+  "time": {"from": "now-1h", "to": "now"},
+  "panels": [
+    {"id": 1, "title": "Requests per second", "type": "timeseries", "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8}, "targets": [{"expr": "sum(rate(http_requests_total[5m])) by (handler)", "legendFormat": "{{handler}}"}]},
+    {"id": 2, "title": "HTTP 5xx responses per second", "type": "timeseries", "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8}, "targets": [{"expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m]))", "legendFormat": "5xx"}]},
+    {"id": 3, "title": "API availability", "type": "stat", "gridPos": {"x": 0, "y": 8, "w": 6, "h": 5}, "targets": [{"expr": "up{job=\"cataclysm-api\"}"}]},
+    {"id": 4, "title": "Committed Kafka consumer lag", "type": "timeseries", "gridPos": {"x": 6, "y": 8, "w": 9, "h": 5}, "targets": [{"expr": "cataclysm_consumer_lag", "legendFormat": "Partition {{partition}}"}]},
+    {"id": 5, "title": "Lake objects by layer", "type": "timeseries", "gridPos": {"x": 15, "y": 8, "w": 9, "h": 5}, "targets": [{"expr": "cataclysm_lake_objects", "legendFormat": "{{layer}}"}]},
+    {"id": 6, "title": "Spark microbatch duration (ms)", "type": "timeseries", "gridPos": {"x": 0, "y": 13, "w": 12, "h": 7}, "targets": [{"expr": "cataclysm_spark_batch_duration_ms", "legendFormat": "{{query}}"}]},
+    {"id": 7, "title": "API process resident memory", "type": "timeseries", "gridPos": {"x": 12, "y": 13, "w": 12, "h": 7}, "targets": [{"expr": "process_resident_memory_bytes{job=\"cataclysm-api\"}"}]}
+  ]
+}

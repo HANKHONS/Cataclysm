@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-10",
+  "recorded_from": "Actual scripts.demo_smoke --spark stdout during this execution; later documentation work does not extend its boundary.",
+  "event_id": "DEMO-bda57322b7124b6c",
+  "kafka": {
+    "status": "confirmed",
+    "event_id": "DEMO-bda57322b7124b6c",
+    "partition": 0,
+    "offset": 89
+  },
+  "database": true,
+  "predictions": 2,
+  "raw_lake": true,
+  "duplicate_consumed_without_duplicate_row": true,
+  "operational_committed_offset": 91,
+  "processed_parquet_files": 41,
+  "specific_event_in_processed_parquet": true
+}

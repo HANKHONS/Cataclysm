@@ -1,47 +1,67 @@
-# Cataclysm — Architecture
+# Cataclysm — System Architecture & Design Specification
 
-## Overview
+## 1. Overview
+Current verified behavior and operational caveats are recorded in `docs/VERIFICATION.md` and `docs/DEMO.md`; those take precedence over the original design narrative below. The operational consumer writes PostgreSQL and raw MinIO objects before committing offsets. Spark independently writes `events-v2/`, then a second query reads that committed Parquet and produces `windowed_incident_counts-v2/`. Driver and executors share the checkpoint volume. The SSE feed polls persisted DB records; ingestion acknowledgements do not imply downstream persistence. The relational additions are `locations`, `reports`, `predictions` and `anomaly_windows`, preserving the existing `crisis_events` table.
 
-During a disaster (flood, earthquake, cyclone, fire), information arrives from many places at once. This data is messy, fast, and high-volume. Cataclysm collects all of it, processes it in real-time, classifies the disaster type, predicts severity, and shows results on a dashboard.
+**Cataclysm** is a distributed, real-time crisis intelligence platform that ingests high-velocity disaster telemetry (floods, cyclones, earthquakes, wildfires, infrastructure incidents), streams them through Apache Kafka, processes them with Apache Spark, archives raw events in a MinIO Parquet Data Lake, maintains queryable relational records in PostgreSQL, runs ML classification/severity models, and renders live alerts on an interactive geospatial dashboard via Server-Sent Events (SSE).
 
-## Data Flow
+---
 
-1. **Data Sources** — Citizen reports (simulated), Weather API (OpenWeatherMap), Earthquake API (USGS), Sensor data (simulated water level, smoke, temperature)
-2. **FastAPI** — Receives data via REST API, validates it (correct format? required fields?), sends valid events to Kafka
-3. **Kafka** — Streams events reliably. Holds data safely even if Spark is busy or crashes. Handles thousands of events/sec. Decouples receiving data from processing data.
-4. **Spark** — Reads from Kafka in real-time. Cleans messy data, removes duplicates, aggregates (e.g. "47 flood reports from Zone A in 10 min"), joins weather + reports. Also does batch processing on historical data.
-5. **Data Lake (MinIO)** — Stores ALL data in layers: /raw (untouched original), /processed (cleaned), /curated (ready for ML). Uses Parquet format (compressed, fast for analytics).
-6. **PostgreSQL** — Stores structured, queryable data: incidents, predictions, locations. The dashboard and API query this.
-7. **ML Models** — Incident Classifier: "Water entering houses" → FLOOD. Severity Predictor: rainfall + report count + water level → CRITICAL.
-8. **Dashboard** — Map with incident locations (color-coded by severity), active incidents list, trends over time, anomaly alerts.
-9. **Monitoring (Prometheus + Grafana)** — Tracks API response time, Kafka messages/sec, Spark processing time, CPU, memory, errors.
+## 2. End-to-End Data Flow
 
 ```
-Data Sources → FastAPI → Kafka → Spark → Data Lake + PostgreSQL → ML → Dashboard → Monitoring
+[Sources: Generator / Sensors / APIs]
+                  │
+                  ▼ HTTP POST /events
+         [FastAPI Gateway] ─── SSE Stream ───► [Interactive Leaflet Dashboard]
+                  │
+                  ▼ (Producer with Delivery Callbacks, acks=all)
+          [Kafka Broker]
+                  │
+        ┌─────────┴─────────┐
+        ▼                   ▼
+ [Python Consumer]    [Apache Spark 3.5.1]
+  - ML Inference       - 10-Min Watermark
+  - DLQ Error Route    - Stateful Dedup
+  - Idempotent Write   - Sliding Windows
+        │                   │
+        ├───────────────────┘
+        ▼
+   ┌────┴───────────────┐
+   ▼                    ▼
+[PostgreSQL 15]     [MinIO Parquet Lake]
+(Live Queries)      (Long-Term Archival)
 ```
 
-## Why Two Storage Systems?
+1. **Ingestion & Validation**:
+   - Telemetry arrives at `POST /events`.
+   - Validated via Pydantic (`CrisisEvent`, `Metadata`).
+   - Acknowledged only after Kafka broker confirms partition write.
+2. **Reliable Message Streaming**:
+   - Apache Kafka 4.3.1 KRaft broker with topic `crisis-events` (3 partitions).
+   - Topic `crisis-events-dlq` receives malformed payloads with error diagnostic headers.
+3. **Consumer & Persistence**:
+   - `enable.auto.commit=False` for at-least-once processing.
+   - Idempotent upserts (`ON CONFLICT (event_id) DO NOTHING` or `DO UPDATE`) via `psycopg-pool`.
+   - Commits Kafka offsets strictly after database transaction commits.
+4. **Machine Learning Intelligence**:
+   - Text classification: Categorizes unstructured report text into disaster categories.
+   - Severity prediction: Evaluates physics telemetry (`rainfall_mm`, `water_level_m`, `wind_speed_kmh`, `temperature_c`) to classify threat levels.
+5. **Data Lake Storage (MinIO S3)**:
+   - Snappy-compressed Parquet files partitioned by `year=YYYY/month=MM/day=DD/disaster_type=X/`.
+   - Disaster replay tool enables rapid state recovery and backfilling.
+6. **Real-Time Geospatial Visualization**:
+   - Leaflet.js interactive dark-mode map.
+   - Live Server-Sent Events (SSE) `/api/events/stream` automatically plots events and updates live feeds in real time.
 
-**Data Lake (MinIO):** Stores everything in bulk — millions of raw events. Cheap storage. Good for batch processing and ML training. You don't query it directly from the app.
+---
 
-**PostgreSQL:** Stores structured data that the app needs to query. Example: "Show me all critical floods in Mumbai." Supports SQL (SELECT, JOIN, WHERE). The dashboard reads from here.
+## 3. Reliability & Fault Tolerance Guarantees
 
-Different storage for different purposes. You don't dump 5 million raw events into PostgreSQL. You don't run SQL dashboard queries on Parquet files.
-
-## Containers (Docker Compose)
-
-| Container | What it runs |
+| Failure Scenario | System Behavior & Mitigation |
 |---|---|
-| fastapi | Python API server |
-| kafka | Message streaming |
-| broker | Kafka broker |
-| spark-master | Spark driver (plans the work) |
-| spark-worker | Spark executor (does the work) — scalable to 2, 4 workers |
-| postgres | PostgreSQL database |
-| minio | S3-compatible Data Lake (local) |
-
-One command starts everything: `docker compose up`
-
-## Cloud
-
-Will be deployed on Azure VM (compute) + Azure Blob Storage (replaces MinIO as Data Lake in production). Azure Student credits — $100 free, no credit card needed.
+| **Broker temporarily down** | API returns `503 Service Unavailable`; client retry triggered; zero false acknowledgments. |
+| **Malformed / corrupted JSON** | Diverted to `crisis-events-dlq` topic; consumer commits offset and continues processing. |
+| **PostgreSQL container restart** | Consumer executes bounded exponential backoff retries without crashing or committing offset. |
+| **Duplicate message delivery** | Table uses `PRIMARY KEY (event_id)` with `ON CONFLICT DO NOTHING/UPDATE` (idempotent). |
+| **Complete database loss** | Parquet replay CLI (`src/data/replay.py`) reconstructs PostgreSQL records from MinIO S3 data lake. |

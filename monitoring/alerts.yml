@@ -1,0 +1,18 @@
+groups:
+  - name: cataclysm
+    rules:
+      - alert: ApiUnavailable
+        expr: up{job="cataclysm-api"} == 0
+        for: 1m
+        labels: {severity: critical}
+        annotations: {summary: "Cataclysm API is unavailable"}
+      - alert: DependencyUnavailable
+        expr: cataclysm_dependency_up == 0
+        for: 1m
+        labels: {severity: warning}
+        annotations: {summary: "A dependency probe failed"}
+      - alert: ConsumerLag
+        expr: sum(cataclysm_consumer_lag) > 1000
+        for: 2m
+        labels: {severity: warning}
+        annotations: {summary: "Consumer lag exceeds 1000 records"}

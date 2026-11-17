@@ -1,0 +1,10 @@
+{
+  "observed_at": "2026-11-10T11:24:45.990307+00:00",
+  "database_outage_events_status": 503,
+  "database_outage_ready_status": 503,
+  "broker_outage_ingest_status": 503,
+  "event_id": "OUTAGE-772dec7035bd4cd4",
+  "same_id_retry_persisted": true,
+  "recovered_readiness": true,
+  "note": "503 acknowledgment timeout is uncertain acceptance; retry uses original identity. Services restored in finally blocks."
+}

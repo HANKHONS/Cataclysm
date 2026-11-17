@@ -1,0 +1,93 @@
+{
+  "trained_at": "2026-11-05T05:51:21.983859+00:00",
+  "seed": 42,
+  "text_corpus_size": 50,
+  "text_test_size": 10,
+  "text_macro_f1": 0.44666666666666666,
+  "text_classification_report": {
+    "cyclone": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "earthquake": {
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1-score": 0.4,
+      "support": 2.0
+    },
+    "fire": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "flood": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1-score": 0.5,
+      "support": 2.0
+    },
+    "infrastructure": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "accuracy": 0.5,
+    "macro avg": {
+      "precision": 0.4666666666666666,
+      "recall": 0.5,
+      "f1-score": 0.44666666666666666,
+      "support": 10.0
+    },
+    "weighted avg": {
+      "precision": 0.4666666666666666,
+      "recall": 0.5,
+      "f1-score": 0.44666666666666666,
+      "support": 10.0
+    }
+  },
+  "severity_macro_f1": 0.9970659894993309,
+  "severity_classification_report": {
+    "critical": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 45.0
+    },
+    "minor": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 84.0
+    },
+    "moderate": {
+      "precision": 0.989010989010989,
+      "recall": 1.0,
+      "f1-score": 0.994475138121547,
+      "support": 90.0
+    },
+    "severe": {
+      "precision": 1.0,
+      "recall": 0.9876543209876543,
+      "f1-score": 0.9937888198757764,
+      "support": 81.0
+    },
+    "accuracy": 0.9966666666666667,
+    "macro avg": {
+      "precision": 0.9972527472527473,
+      "recall": 0.9969135802469136,
+      "f1-score": 0.9970659894993309,
+      "support": 300.0
+    },
+    "weighted avg": {
+      "precision": 0.9967032967032967,
+      "recall": 0.9966666666666667,
+      "f1-score": 0.9966655228029239,
+      "support": 300.0
+    }
+  },
+  "limitations": "Small curated text corpus; synthetic severity labels. Scores do not establish real-world accuracy. Probabilities are uncalibrated."
+}

@@ -1,153 +1,179 @@
-from datetime import datetime
+import time
+import uuid
 import random
-import sys
-import json
+import argparse
 import requests
+from datetime import datetime
 
-def generate_metadata(disaster_type):
-    if disaster_type == "flood":
-        return {
-            "rainfall_mm": round(random.uniform(50, 300), 1),
-            "water_level_m": round(random.uniform(1, 8), 1),
-            "wind_speed_kmh": round(random.uniform(5, 40), 1),
-            "temperature_c": round(random.uniform(20, 35), 1)
+CITIES = [
+    {"name": "Mumbai", "lat": 19.0760, "lon": 72.8777, "typical": "flood"},
+    {"name": "Chennai", "lat": 13.0827, "lon": 80.2707, "typical": "cyclone"},
+    {"name": "Guwahati", "lat": 26.1445, "lon": 91.7362, "typical": "flood"},
+    {"name": "Kochi", "lat": 9.9312, "lon": 76.2673, "typical": "flood"},
+    {"name": "Delhi", "lat": 28.7041, "lon": 77.1025, "typical": "earthquake"},
+    {"name": "Dehradun", "lat": 30.3165, "lon": 78.0322, "typical": "earthquake"},
+    {"name": "Puri", "lat": 19.8135, "lon": 85.8312, "typical": "cyclone"},
+    {"name": "Nagpur", "lat": 21.1458, "lon": 79.0882, "typical": "fire"},
+    {"name": "Bengaluru", "lat": 12.9716, "lon": 77.5946, "typical": "infrastructure"},
+    {"name": "Kolkata", "lat": 22.5726, "lon": 88.3639, "typical": "cyclone"},
+]
+
+DISASTER_DESCRIPTIONS = {
+    "flood": [
+        "Severe waterlogging reported in {location}, ground floors inundated after intense rainfall.",
+        "River overflowing past critical danger mark in {location}, rescue boats deployed.",
+        "Flash floods triggered by torrential rain sweep through residential colonies in {location}.",
+        "Water supply disrupted and main roads submerged following dam release near {location}.",
+    ],
+    "earthquake": [
+        "Strong seismic tremors felt in {location}, buildings swaying and residents fleeing into open fields.",
+        "Moderate earthquake strikes near {location}, cracks observed on older masonry structures.",
+        "Multiple aftershocks recorded across {location} district following initial magnitude 5.8 quake.",
+        "Structural damage and power outage reported across several neighborhoods in {location}.",
+    ],
+    "cyclone": [
+        "Fierce gales reaching 140 km/h uprooting trees and electric pylons along coast of {location}.",
+        "Severe storm surge and tidal flooding inundate low-lying coastal belts of {location}.",
+        "High-velocity cyclone winds causing extensive damage to roofs and communications in {location}.",
+        "Heavy squall with blinding rains battering ports and coastal roads near {location}.",
+    ],
+    "fire": [
+        "Large commercial building inferno burning out of control in industrial zone of {location}.",
+        "Dry brush fire spreading rapidly along periphery of {location} due to high wind gusts.",
+        "Chemical warehouse blaze producing thick dark smoke plume over {location} skyline.",
+        "Residential complex fire prompts urgent evacuation of hundreds of families in {location}.",
+    ],
+    "infrastructure": [
+        "Major arterial flyover developed critical concrete crack, closed to traffic in {location}.",
+        "Main power transmission substation failure causes blackout across north sector of {location}.",
+        "Underground water pipeline burst flooding rail tracks and disrupting transit in {location}.",
+        "Highway retaining wall collapse blocks multi-lane freight corridor near {location}.",
+    ],
+}
+
+
+def generate_event(city_override=None, disaster_override=None):
+    city = random.choice(CITIES) if not city_override else city_override
+    disaster = (
+        disaster_override
+        if disaster_override
+        else random.choice(["flood", "earthquake", "cyclone", "fire", "infrastructure"])
+    )
+
+    # Realistic jitter around city coordinates (+/- 0.05 deg ~ 5km)
+    lat = round(city["lat"] + random.uniform(-0.04, 0.04), 4)
+    lon = round(city["lon"] + random.uniform(-0.04, 0.04), 4)
+
+    # Severity distribution
+    severity = random.choices(
+        ["minor", "moderate", "severe", "critical"], weights=[0.3, 0.35, 0.25, 0.1]
+    )[0]
+
+    # Telemetry based on disaster
+    if disaster == "flood":
+        meta = {
+            "rainfall_mm": round(random.uniform(60, 320), 1),
+            "water_level_m": round(random.uniform(1.2, 7.5), 1),
+            "wind_speed_kmh": round(random.uniform(10, 45), 1),
+            "temperature_c": round(random.uniform(22, 32), 1),
         }
-    elif disaster_type == "earthquake":
-        return {
+    elif disaster == "cyclone":
+        meta = {
+            "rainfall_mm": round(random.uniform(90, 380), 1),
+            "water_level_m": round(random.uniform(1.5, 6.0), 1),
+            "wind_speed_kmh": round(random.uniform(85, 210), 1),
+            "temperature_c": round(random.uniform(22, 30), 1),
+        }
+    elif disaster == "fire":
+        meta = {
             "rainfall_mm": 0.0,
+            "water_level_m": 0.0,
+            "wind_speed_kmh": round(random.uniform(15, 55), 1),
+            "temperature_c": round(random.uniform(38, 52), 1),
+        }
+    elif disaster == "earthquake":
+        meta = {
+            "rainfall_mm": round(random.uniform(0, 10), 1),
             "water_level_m": 0.0,
             "wind_speed_kmh": round(random.uniform(0, 20), 1),
-            "temperature_c": round(random.uniform(15, 40), 1)
-        }
-    elif disaster_type == "cyclone":
-        return {
-            "rainfall_mm": round(random.uniform(80, 400), 1),
-            "water_level_m": round(random.uniform(2, 10), 1),
-            "wind_speed_kmh": round(random.uniform(60, 200), 1),
-            "temperature_c": round(random.uniform(20, 32), 1)
-        }
-    elif disaster_type == "fire":
-        return {
-            "rainfall_mm": 0.0,
-            "water_level_m": 0.0,
-            "wind_speed_kmh": round(random.uniform(5, 30), 1),
-            "temperature_c": round(random.uniform(35, 50), 1)
+            "temperature_c": round(random.uniform(15, 35), 1),
         }
     else:  # infrastructure
-        return {
-            "rainfall_mm": round(random.uniform(0, 50), 1),
-            "water_level_m": round(random.uniform(0, 2), 1),
-            "wind_speed_kmh": round(random.uniform(0, 30), 1),
-            "temperature_c": round(random.uniform(15, 40), 1)
+        meta = {
+            "rainfall_mm": round(random.uniform(0, 30), 1),
+            "water_level_m": round(random.uniform(0, 1.0), 1),
+            "wind_speed_kmh": round(random.uniform(5, 30), 1),
+            "temperature_c": round(random.uniform(20, 38), 1),
         }
 
-    
-count = int(sys.argv[1]) if len(sys.argv) > 1 else 10
+    template = random.choice(DISASTER_DESCRIPTIONS[disaster])
+    text = template.format(location=city["name"])
 
-flood_events = [
-    "A severe flood has occurred in {location}, causing widespread damage and displacement of residents .",
-    "Heavy rainfall has led to flooding in {location}, resulting in road closures and property damage.",
-    "The river has overflowed its banks, causing flooding in nearby neighborhoods and affecting local businesses in {location}.",
-    "Flash floods have been reported in {location}, prompting emergency response and evacuation efforts.",
-    "The local authorities have issued flood warnings for {location} due to rising water levels and potential hazards.",
-    "Residents of {location} are advised to take precautions and stay informed about the flood situation."
-]
-
-fire_events = [
-    "A wildfire has broken out in {location}, threatening homes and wildlife in the area.",
-    "Firefighters are battling a large fire in {location}, with efforts focused on containment and evacuation.",
-    "The fire in {location} has caused significant damage to property and natural habitats, prompting emergency response.",
-    "Authorities have issued evacuation orders for residents in {location} due to the spreading fire.",
-    "The wildfire in {location} has been fueled by dry conditions and strong winds, posing a serious threat to the community.",
-    "Local authorities are urging residents of {location} to stay alert and follow safety guidelines during the ongoing fire emergency."
-]
-
-earthquake_events = [
-    "A powerful earthquake has struck {location}, causing widespread destruction and casualties.",
-    "The earthquake in {location} has resulted in collapsed buildings and infrastructure damage, prompting rescue operations.",
-    "Residents of {location} are advised to stay indoors and follow safety protocols after the recent earthquake.",
-    "Emergency services are responding to the aftermath of the earthquake in {location}, providing aid and support to affected communities.",
-    "The earthquake in {location} has triggered aftershocks, leading to further concerns about structural stability and safety in the area.",
-    "Authorities are assessing the impact of the earthquake in {location} and coordinating relief efforts for those affected by the disaster."
-]
-
-cyclone_events = [
-    "A severe cyclone has made landfall in {location}, causing extensive damage and power outages.",
-    "Residents of {location} are being evacuated as the cyclone approaches, with emergency shelters being set up.",
-    "The cyclone in {location} has brought heavy rainfall and strong winds, leading to flooding and property damage.",
-    "Authorities are closely monitoring the cyclone's path and issuing warnings to residents in {location} to stay safe.",
-    "The impact of the cyclone in {location} has disrupted transportation and communication networks, affecting daily life.",
-    "Emergency response teams are working tirelessly to assist those affected by the cyclone in {location}, providing aid and support."
-]
-
-infrastructure_events = [
-    "A major infrastructure failure has occurred in {location}, leading to disruptions in essential services.", 
-    "The failure in {location} has resulted in water supply issues and transportation delays.",
-    "Residents of {location} are experiencing difficulties due to the infrastructure failure, with essential services being affected.",
-    "Emergency services are working to restore the infrastructure in {location} and minimize the impact on the community.",
-    "The infrastructure failure in {location} has prompted a review of maintenance protocols and safety measures.",
-    "Efforts are underway to repair the damaged infrastructure in {location} and ensure the safety of residents."
-
-]
-
-disaster_type = ["flood","fire","earthquake","cyclone","infrastructure"]
-location=[
-    {"location":"Mumbai","latitude":19.0760,"longitude":72.8777},
-    {"location":"Delhi","latitude":28.7041,"longitude":77.1025},
-    {"location":"Bangalore","latitude":12.9716,"longitude":77.5946},
-    {"location":"Chennai","latitude":13.0827,"longitude":80.2707},
-    {"location":"Kolkata","latitude":22.5726,"longitude":88.3639},
-    {"location":"Hyderabad","latitude":17.3850,"longitude":78.4867},
-    {"location":"Pune","latitude":18.5204,"longitude":73.8567},
-    {"location":"Ahmedabad","latitude":23.0225,"longitude":72.5714},
-    {"location":"Jaipur","latitude":26.9124,"longitude":75.7873},
-    {"location":"Lucknow","latitude":26.8467,"longitude":80.9462}
-]
-sources=['Citizen Report','Government Alert','News Agency','Social Media','Emergency Services','sensor','Weather Station','Satellite Imagery','Local Authority','Community Organization']
-
-
-
-severity=["low","medium","high","critical"]
-
-for i in range(count):
-    event_id=f"event_{i+1}"
-    disaster=random.choice(disaster_type)
-    metadata=generate_metadata(disaster)
-    timestamp=datetime.now().isoformat()
-    loca=random.choice(location)
-    loc=loca["location"]
-    lat=loca["latitude"]    
-    lon=loca["longitude"]
-    if disaster=="flood":
-            text=random.choice(flood_events).format(location=loc)
-    elif disaster=="fire":
-            text=random.choice(fire_events).format(location=loc)
-    elif disaster=="earthquake":
-            text=random.choice(earthquake_events).format(location=loc)
-    elif disaster=="cyclone":
-            text=random.choice(cyclone_events).format(location=loc)
-    elif disaster=="infrastructure":
-            text=random.choice(infrastructure_events).format(location=loc)
-    sev=random.choice(severity)
-    source=random.choice(sources)
-    
-    event={
-        "event_id":event_id,
-        "timestamp":timestamp,
-        "text":text,
-        "location":loc,
-        "disaster_type":disaster,
-        "latitude":lat,
-        "longitude":lon,
-        "severity":sev,
-        "source":source,
-        "metadata":metadata
+    return {
+        "event_id": f"EVT-{uuid.uuid4().hex[:8].upper()}",
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "text": text,
+        "location": city["name"],
+        "disaster_type": disaster,
+        "latitude": lat,
+        "longitude": lon,
+        "severity": severity,
+        "source": "synthetic_generator",
+        "metadata": {
+            **meta,
+            "is_synthetic": True,
+            "location_accuracy": "Simulated coordinates near city center",
+        },
     }
 
-    response=requests.post("http://localhost:8000/events",json=event)
-    print(f"Status: {response.status_code} -> {response.json()}")
 
-  
+def main():
+    parser = argparse.ArgumentParser(
+        description="Cataclysm Synthetic Crisis Event Generator"
+    )
+    parser.add_argument(
+        "--count", type=int, default=10, help="Number of disaster events to generate"
+    )
+    parser.add_argument(
+        "--delay", type=float, default=0.5, help="Delay in seconds between events"
+    )
+    parser.add_argument(
+        "--url", default="http://localhost:8000/events", help="FastAPI ingest endpoint"
+    )
+    args = parser.parse_args()
 
-    
+    print("===========================================================")
+    print(f" Cataclysm Event Generator — Dispatching {args.count} Events")
+    print(f" Target Endpoint: {args.url}")
+    print("===========================================================\n")
 
+    success = 0
+    failed = 0
+
+    for i in range(1, args.count + 1):
+        event = generate_event()
+        try:
+            res = requests.post(args.url, json=event, timeout=4.0)
+            if res.status_code == 200:
+                data = res.json()
+                print(
+                    f"[{i}/{args.count}] ✅ Ingested {event['event_id']} | {event['disaster_type'].upper()} ({event['severity']}) in {event['location']} -> Kafka P{data.get('partition')}@O{data.get('offset')}"
+                )
+                success += 1
+            else:
+                print(
+                    f"[{i}/{args.count}] ❌ Ingest failed: HTTP {res.status_code} - {res.text}"
+                )
+                failed += 1
+        except Exception as e:
+            print(f"[{i}/{args.count}] ⚠️ Request failed: {e}")
+            failed += 1
+
+        if i < args.count and args.delay > 0:
+            time.sleep(args.delay)
+
+    print(f"\nDispatch Summary: {success} Succeeded, {failed} Failed.")
+
+
+if __name__ == "__main__":
+    main()

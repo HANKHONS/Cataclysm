@@ -1,245 +1,220 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Disaster Stream Ingestion & Verification</title>
-    <!-- Tailwind CSS CDN for clean styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 text-gray-900 font-sans antialiased min-h-screen">
-    <div class="max-w-6xl mx-auto px-4 py-8">
-        <!-- Header -->
-        <header class="border-b border-gray-300 pb-4 mb-6 flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Disaster Stream Ingestion Platform</h1>
-                <p class="text-sm text-gray-600">Event Ingestion & PostgreSQL Verification Portal</p>
-            </div>
-            <div class="flex items-center space-x-2 text-xs font-mono bg-white px-3 py-1.5 rounded border border-gray-300 shadow-sm">
-                <span class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span>FastAPI • Kafka • PostgreSQL</span>
-            </div>
-        </header>
-
-        <!-- 2-Column Layout -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            <!-- Left Panel: Event Form & Response (5 cols) -->
-            <div class="lg:col-span-5 space-y-6">
-                <!-- Form Card -->
-                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                    <h2 class="text-base font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">
-                        1. Submit Sample Event (POST /events)
-                    </h2>
-                    <form id="event-form" class="space-y-4 text-sm">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">City / Location</label>
-                            <input type="text" id="form-location" value="Mumbai" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500" />
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Disaster Type</label>
-                                <select id="form-type" class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    <option value="flood">Flood</option>
-                                    <option value="cyclone">Cyclone</option>
-                                    <option value="earthquake">Earthquake</option>
-                                    <option value="fire">Fire</option>
-                                    <option value="infrastructure">Infrastructure</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Severity</label>
-                                <select id="form-severity" class="w-full border border-gray-300 rounded px-2.5 py-2 text-sm bg-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                                    <option value="low">Low</option>
-                                    <option value="medium">Medium</option>
-                                    <option value="high" selected>High</option>
-                                    <option value="critical">Critical</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Incident Report</label>
-                            <textarea id="form-text" rows="2" required class="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500">Heavy waterlogging and flooding near station road.</textarea>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Rainfall (mm)</label>
-                                <input type="number" id="form-rainfall" value="145.5" step="0.1" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-700 uppercase mb-1">Water Level (m)</label>
-                                <input type="number" id="form-waterlevel" value="3.2" step="0.1" class="w-full border border-gray-300 rounded px-3 py-1.5 text-sm" />
-                            </div>
-                        </div>
-
-                        <button type="submit" id="submit-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded text-sm transition">
-                            Send Event to API
-                        </button>
-                    </form>
-                </div>
-
-                <!-- API Response Box -->
-                <div class="bg-white p-5 rounded-lg border border-gray-200 shadow-sm">
-                    <h3 class="text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">API Response</h3>
-                    <div id="response-container">
-                        <p class="text-xs text-gray-400 italic">Submit an event above to inspect the API return payload.</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Panel: Stored Events from PostgreSQL (7 cols) -->
-            <div class="lg:col-span-7">
-                <div class="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
-                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-gray-100">
-                        <div>
-                            <h2 class="text-base font-semibold text-gray-800">2. Stored Events in PostgreSQL</h2>
-                            <p class="text-xs text-gray-500">Live query via GET /api/events</p>
-                        </div>
-                        <button onclick="loadStoredEvents()" class="text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 font-medium px-3 py-1.5 rounded transition">
-                            🔄 Refresh Database
-                        </button>
-                    </div>
-
-                    <!-- Events Table Container -->
-                    <div id="table-container" class="overflow-x-auto min-h-[300px]">
-                        <p class="text-xs text-gray-500 py-8 text-center">Loading stored events from PostgreSQL...</p>
-                    </div>
-                </div>
-            </div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Crisis Intelligence Platform · Situation Room</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"
+    />
+    <link rel="stylesheet" href="/static/console.css" />
+    <script
+      defer
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    ></script>
+    <script
+      defer
+      src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"
+    ></script>
+    <script defer src="/static/console.js"></script>
+  </head>
+  <body>
+    <a href="#workspace" class="skip">Skip to incidents</a>
+    <header>
+      <a class="brand" href="/" aria-label="Crisis Intelligence Platform"
+        ><span class="brand-mark">CIP /</span
+        ><span
+          >CRISIS INTELLIGENCE<small>GLOBAL SITUATION ROOM / DISASTER TELEMETRY</small></span
+        ></a
+      >
+      <div class="header-right">
+        <span id="connectionStatus" role="status">Connecting to stream…</span
+        ><a href="/handbook/">Field guide ↗</a>
+      </div>
+    </header>
+    <main>
+      <div class="title-row">
+        <div>
+          <p class="eyebrow">OPERATIONS / SITUATION OVERVIEW</p>
+          <h1>A clearer picture.<br /><em>A measured response.</em></h1>
         </div>
-    </div>
-
-    <!-- Pure Native JavaScript (Zero Babel / Zero CDN Lag) -->
-    <script>
-        // Supports both http://localhost:8000 and file:/// navigation
-        const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
-
-        // 1. Function to Load Stored Events from PostgreSQL
-        async function loadStoredEvents() {
-            const container = document.getElementById('table-container');
-            container.innerHTML = '<p class="text-xs text-gray-500 py-8 text-center animate-pulse">Querying PostgreSQL...</p>';
-
-            try {
-                const response = await fetch(API_BASE + '/api/events');
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                const events = await response.json();
-
-                if (!events || events.length === 0) {
-                    container.innerHTML = '<p class="text-xs text-gray-400 py-12 text-center">No events found in PostgreSQL table yet.</p>';
-                    return;
-                }
-
-                // Build Table HTML
-                let html = `
-                    <table class="w-full text-left text-xs border-collapse">
-                        <thead>
-                            <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 uppercase font-semibold">
-                                <th class="py-2.5 px-3">Event ID</th>
-                                <th class="py-2.5 px-3">City</th>
-                                <th class="py-2.5 px-3">Type</th>
-                                <th class="py-2.5 px-3">Severity</th>
-                                <th class="py-2.5 px-3">Details</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-gray-100">
-                `;
-
-                events.forEach(evt => {
-                    let badgeClass = 'bg-blue-100 text-blue-700';
-                    if (evt.severity === 'critical') badgeClass = 'bg-red-100 text-red-700';
-                    else if (evt.severity === 'high') badgeClass = 'bg-orange-100 text-orange-700';
-                    else if (evt.severity === 'medium') badgeClass = 'bg-yellow-100 text-yellow-800';
-
-                    html += `
-                        <tr class="hover:bg-gray-50 transition">
-                            <td class="py-2 px-3 font-mono text-gray-500 text-[11px]">${evt.event_id || ''}</td>
-                            <td class="py-2 px-3 font-medium text-gray-900">${evt.location || ''}</td>
-                            <td class="py-2 px-3 uppercase text-[11px] font-semibold text-gray-700">${evt.disaster_type || ''}</td>
-                            <td class="py-2 px-3">
-                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${badgeClass}">
-                                    ${evt.severity || ''}
-                                </span>
-                            </td>
-                            <td class="py-2 px-3 text-gray-600 max-w-xs truncate" title="${evt.text || ''}">
-                                ${evt.text || ''}
-                            </td>
-                        </tr>
-                    `;
-                });
-
-                html += '</tbody></table>';
-                container.innerHTML = html;
-            } catch (err) {
-                container.innerHTML = `<div class="p-4 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
-                    Failed to query database: <strong>${err.message}</strong>
-                </div>`;
-            }
-        }
-
-        // 2. Function to Handle Form Submit
-        document.getElementById('event-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const btn = document.getElementById('submit-btn');
-            const respBox = document.getElementById('response-container');
-
-            btn.disabled = true;
-            btn.innerText = 'Sending to API...';
-
-            const payload = {
-                event_id: `evt_${Date.now().toString().slice(-6)}`,
-                timestamp: new Date().toISOString(),
-                text: document.getElementById('form-text').value,
-                location: document.getElementById('form-location').value,
-                disaster_type: document.getElementById('form-type').value,
-                latitude: 19.0760,
-                longitude: 72.8777,
-                severity: document.getElementById('form-severity').value,
-                source: "Web Ingestion Portal",
-                metadata: {
-                    rainfall_mm: parseFloat(document.getElementById('form-rainfall').value) || 0,
-                    water_level_m: parseFloat(document.getElementById('form-waterlevel').value) || 0,
-                    wind_speed_kmh: 15.0,
-                    temperature_c: 28.0
-                }
-            };
-
-            try {
-                const res = await fetch(API_BASE + '/events', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await res.json();
-
-                respBox.innerHTML = `
-                    <div class="space-y-2">
-                        <span class="text-xs font-mono font-bold px-2 py-0.5 rounded ${res.ok ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
-                            HTTP ${res.status} ${res.statusText}
-                        </span>
-                        <pre class="bg-gray-50 border border-gray-200 p-2.5 rounded text-xs font-mono text-gray-800 overflow-x-auto">${JSON.stringify(data, null, 2)}</pre>
-                    </div>
-                `;
-
-                // Auto-refresh the stored events table after 1.2 seconds
-                setTimeout(loadStoredEvents, 1200);
-            } catch (err) {
-                respBox.innerHTML = `
-                    <div class="p-3 bg-red-50 border border-red-200 rounded text-red-700 text-xs">
-                        Error submitting event: <strong>${err.message}</strong>
-                    </div>
-                `;
-            } finally {
-                btn.disabled = false;
-                btn.innerText = 'Send Event to API';
-            }
-        });
-
-        // 3. Load events immediately when the page finishes loading
-        window.onload = loadStoredEvents;
-    </script>
-</body>
+        <p class="context">
+          Multi-source observations, one geographic workspace.<br /><strong
+            >Cloud-native prototype</strong
+          >
+          · Real-time event streaming pipeline.<br /><span id="updated"
+            >Waiting for persisted observations</span
+          >
+        </p>
+      </div>
+      <form id="filters" class="filters" aria-label="Incident filters">
+        <label
+          >Observation period<select id="period">
+            <option value="24">Last 24 hours</option>
+            <option value="168">Last 7 days</option>
+            <option value="all">All persisted history</option>
+            <option value="1">Last hour</option>
+          </select></label
+        >
+        <label
+          >Hazard<select id="type">
+            <option value="">All hazards</option>
+            <option>earthquake</option>
+            <option>flood</option>
+            <option>cyclone</option>
+            <option>fire</option>
+            <option>volcano</option>
+            <option>infrastructure</option>
+            <option>weather</option>
+          </select></label
+        >
+        <label
+          >Severity<select id="severity">
+            <option value="">All severities</option>
+            <option>critical</option>
+            <option>severe</option>
+            <option>moderate</option>
+            <option>minor</option>
+            <option value="unknown">unassessed</option>
+          </select></label
+        >
+        <label
+          >Source<select id="source">
+            <option value="">All sources</option>
+          </select></label
+        >
+        <label class="search"
+          >Search location, text or ID<input
+            id="search"
+            type="search"
+            placeholder="Search observations…"
+            maxlength="200"
+        /></label>
+        <button type="submit" class="apply">Apply filters</button>
+      </form>
+      <div id="error" role="alert" hidden></div>
+      <section class="overview" aria-label="Period summary">
+        <div>
+          <span>01 / PERSISTED REPORTS</span><strong id="total">—</strong
+          ><small>All matching records in period</small>
+        </div>
+        <div>
+          <span>02 / CRITICAL + SEVERE</span><strong id="urgent">—</strong
+          ><small>Input severity; may be heuristic</small>
+        </div>
+        <div>
+          <span>03 / RECENT PERSISTENCE</span><strong id="rate">—</strong
+          ><small>New matching IDs / last 60 seconds</small>
+        </div>
+        <div>
+          <span>04 / LATEST OBSERVATION</span
+          ><strong class="timestamp" id="latest">—</strong
+          ><small id="freshness"
+            >Event time; not a service-health guarantee</small
+          >
+        </div>
+      </section>
+      <section
+        class="workspace"
+        id="workspace"
+        aria-label="Geospatial incident workspace"
+      >
+        <div class="map-panel">
+          <div class="panel-head">
+            <h2>Situation map <span> / SOURCE COORDINATES</span></h2>
+            <button id="fit">Fit reports</button>
+          </div>
+          <div id="map">
+            <p id="mapFallback">
+              Loading map library… The incident list remains available if
+              mapping is offline.
+            </p>
+          </div>
+          <div class="map-footer">
+            <div class="legend">
+              <span><i style="--c: var(--critical)"></i>Critical</span
+              ><span><i style="--c: var(--severe)"></i>Severe</span
+              ><span><i style="--c: var(--moderate)"></i>Moderate</span
+              ><span><i style="--c: var(--minor)"></i>Minor</span
+              ><span><i style="--c: var(--unknown)"></i>Unassessed</span>
+            </div>
+            <label
+              ><input type="checkbox" id="viewport" /> Filter to map area</label
+            ><span id="tileStatus"
+              >External tiles · accuracy supplied per report</span
+            >
+          </div>
+        </div>
+        <aside class="feed">
+          <div class="panel-head">
+            <h2>Incident register</h2>
+            <span id="loaded">0 loaded</span>
+          </div>
+          <div id="eventsList" aria-live="polite">
+            <p class="empty">Loading persisted reports…</p>
+          </div>
+          <button id="more">Load older reports</button>
+        </aside>
+      </section>
+      <section class="bottom-grid" aria-label="Analytics and pipeline status">
+        <article>
+          <div class="panel-head">
+            <h2>Activity over time</h2>
+            <span>UTC / HOURLY BINS</span>
+          </div>
+          <div id="timeline" class="timeline"></div>
+          <p class="note">
+            Counts use event time. Latest 168 hours ending at the latest
+            matching event; empty hours have zero reports. A report is not a
+            unique disaster.
+          </p>
+          <div id="distribution"></div>
+          <details class="trends">
+            <summary>Hourly hazard &amp; severity trends</summary>
+            <div id="trends"></div>
+            <p class="note">
+              Latest 1,000 nonempty hour / hazard / severity groups in the
+              selected scope.
+            </p>
+          </details>
+        </article>
+        <article>
+          <div class="panel-head">
+            <h2>Source watch</h2>
+            <span>FRESHNESS ≠ UPTIME</span>
+          </div>
+          <div id="sources"></div>
+          <p class="note">
+            Live means a named provider observation; synthetic and replay retain
+            explicit labels. Provider updates may be delayed.
+          </p>
+        </article>
+        <article>
+          <div class="panel-head">
+            <h2>Pipeline & microservices</h2>
+            <span>MEASURED / REPORTED</span>
+          </div>
+          <dl id="health"></dl>
+          <p class="note" id="models">Storage: MinIO S3 Lakehouse · Broker: Apache Kafka KRaft · Engine: Apache Spark Streaming.</p>
+          <p class="note" id="anomaly" hidden></p>
+          <a href="/docs">Inspect API contracts ↗</a>
+        </article>
+      </section>
+      <footer>
+        CRISIS INTELLIGENCE PLATFORM / CLOUD OPERATIONS
+        <span
+          >Real-time global disaster telemetry aggregated from UN GDACS and USGS.</span
+        >
+      </footer>
+    </main>
+    <dialog id="details">
+      <button class="close" aria-label="Close event details">×</button>
+      <div id="detailBody"></div>
+    </dialog>
+  </body>
 </html>

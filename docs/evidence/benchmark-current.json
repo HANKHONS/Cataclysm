@@ -1,0 +1,52 @@
+{
+  "observed_at": "2026-11-10T11:21:34.385275+00:00",
+  "runtime": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.41",
+  "python": "3.11.18",
+  "versions": {
+    "fastapi": "0.162.0",
+    "confluent-kafka": "2.16.1",
+    "psycopg": "3.3.8",
+    "pyarrow": "26.0.1",
+    "scikit-learn": "1.9.1",
+    "pandas": "3.1.1"
+  },
+  "policy": "One preceding 100-event warm-up; three sequential measured 100-event runs; concurrency 4; no pauses; one location key. Existing browser and streaming workloads remain active.",
+  "runs": [
+    {
+      "requested": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "concurrency": 4,
+      "wall_seconds": 0.9259874120000404,
+      "accepted_per_second": 107.99282874052248,
+      "accepted_p50_seconds": 0.03300386799998023,
+      "accepted_p95_seconds": 0.04401113799997347,
+      "scope": "HTTP-to-Kafka acknowledgement; downstream lag must be inspected separately"
+    },
+    {
+      "requested": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "concurrency": 4,
+      "wall_seconds": 0.932213293000018,
+      "accepted_per_second": 107.2715876837406,
+      "accepted_p50_seconds": 0.032702844999960234,
+      "accepted_p95_seconds": 0.04955964099997345,
+      "scope": "HTTP-to-Kafka acknowledgement; downstream lag must be inspected separately"
+    },
+    {
+      "requested": 100,
+      "accepted": 100,
+      "rejected": 0,
+      "concurrency": 4,
+      "wall_seconds": 0.8874829159999535,
+      "accepted_per_second": 112.67822534626147,
+      "accepted_p50_seconds": 0.03235147449998976,
+      "accepted_p95_seconds": 0.033539369999971314,
+      "scope": "HTTP-to-Kafka acknowledgement; downstream lag must be inspected separately"
+    }
+  ],
+  "ack_rate_mean": 109.31421392350819,
+  "ack_rate_sample_stddev": 2.9355539178846453,
+  "scope": "Container loopback HTTP-to-Kafka acknowledgment only; no sustained-capacity or end-to-end latency claim."
+}

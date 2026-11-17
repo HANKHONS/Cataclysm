@@ -30,3 +30,11 @@ Thumbs.db
 # ML models (too large)
 *.pkl
 *.joblib
+work/
+
+# Local caches, transcripts & build scratch
+.pytest_cache/
+.ruff_cache/
+.artifact-build/
+transcripts/
+*.tar.gz

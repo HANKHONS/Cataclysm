@@ -1,0 +1,177 @@
+{
+  "version": "20261110T111733903473Z",
+  "trained_at": "2026-11-10T11:17:34.270366+00:00",
+  "seed": 42,
+  "text_corpus_size": 50,
+  "text_test_size": 10,
+  "text_macro_f1": 0.44666666666666666,
+  "text_labels": [
+    "cyclone",
+    "earthquake",
+    "fire",
+    "flood",
+    "infrastructure"
+  ],
+  "text_confusion_matrix": [
+    [
+      1,
+      1,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      1,
+      0,
+      0,
+      1
+    ],
+    [
+      0,
+      1,
+      0,
+      1,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      1,
+      1
+    ],
+    [
+      0,
+      0,
+      0,
+      0,
+      2
+    ]
+  ],
+  "text_majority_baseline_macro_f1": 0.06666666666666667,
+  "text_classification_report": {
+    "cyclone": {
+      "precision": 1.0,
+      "recall": 0.5,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "earthquake": {
+      "precision": 0.3333333333333333,
+      "recall": 0.5,
+      "f1-score": 0.4,
+      "support": 2.0
+    },
+    "fire": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 2.0
+    },
+    "flood": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1-score": 0.5,
+      "support": 2.0
+    },
+    "infrastructure": {
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1-score": 0.6666666666666666,
+      "support": 2.0
+    },
+    "accuracy": 0.5,
+    "macro avg": {
+      "precision": 0.4666666666666666,
+      "recall": 0.5,
+      "f1-score": 0.44666666666666666,
+      "support": 10.0
+    },
+    "weighted avg": {
+      "precision": 0.4666666666666666,
+      "recall": 0.5,
+      "f1-score": 0.44666666666666666,
+      "support": 10.0
+    }
+  },
+  "severity_macro_f1": 0.9970659894993309,
+  "severity_labels": [
+    "critical",
+    "minor",
+    "moderate",
+    "severe"
+  ],
+  "severity_confusion_matrix": [
+    [
+      45,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      84,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      90,
+      0
+    ],
+    [
+      0,
+      0,
+      1,
+      80
+    ]
+  ],
+  "severity_majority_baseline_macro_f1": 0.11538461538461539,
+  "severity_classification_report": {
+    "critical": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 45.0
+    },
+    "minor": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 84.0
+    },
+    "moderate": {
+      "precision": 0.989010989010989,
+      "recall": 1.0,
+      "f1-score": 0.994475138121547,
+      "support": 90.0
+    },
+    "severe": {
+      "precision": 1.0,
+      "recall": 0.9876543209876543,
+      "f1-score": 0.9937888198757764,
+      "support": 81.0
+    },
+    "accuracy": 0.9966666666666667,
+    "macro avg": {
+      "precision": 0.9972527472527473,
+      "recall": 0.9969135802469136,
+      "f1-score": 0.9970659894993309,
+      "support": 300.0
+    },
+    "weighted avg": {
+      "precision": 0.9967032967032967,
+      "recall": 0.9966666666666667,
+      "f1-score": 0.9966655228029239,
+      "support": 300.0
+    }
+  },
+  "limitations": "Small curated text corpus; synthetic severity labels. Scores do not establish real-world accuracy. Probabilities are uncalibrated.",
+  "sklearn_version": "1.9.1",
+  "artifact_sha256": {
+    "disaster_classifier.joblib": "35f9d1ee120355d693061bf1294fdc107743617e41db984ce14f4220dcb29b84",
+    "severity_predictor.joblib": "cece86fa0f68621a314b18ad62768dd7bd60fa1e0f52c3dc493da969fb874f04"
+  }
+}

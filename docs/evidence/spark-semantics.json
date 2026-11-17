@@ -1,0 +1,20 @@
+{
+  "observed_at": "2026-11-10T11:18:34.658715+00:00",
+  "spark_version": "3.5.1",
+  "root": "/opt/spark/app/work/spark-semantics-b3e812315b",
+  "processed_event_ids": [
+    "advance-again",
+    "advance",
+    "first"
+  ],
+  "restart_preserved_dedup_state": true,
+  "late_event_absent": true,
+  "watermark_dropped_rows": 1,
+  "normalized_text": "synthetic flood",
+  "finalized_windows_for_first_event": 2,
+  "window_counts": [
+    1,
+    1
+  ],
+  "scope": "Actual clean_events with isolated file source, local[2], checkpoint restart, Parquet readback and downstream window aggregation. Production Kafka path is covered separately by demo_smoke."
+}

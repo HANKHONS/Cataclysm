@@ -1,0 +1,75 @@
+{
+  "observed_at": "2026-11-17T14:39:20.213043+00:00",
+  "invalid_payload_rejected": true,
+  "invalid_bbox_rejected": true,
+  "pagination_disjoint": true,
+  "overview_consistent": true,
+  "live_usgs_rows": 5,
+  "identity_event": "IDENTITY-fd57feb28c09442c",
+  "first_observation_wins": true,
+  "raw_first_observation_wins": true,
+  "sse_database_event_received": true,
+  "prometheus_targets": [
+    {
+      "job": "cataclysm-api",
+      "health": "up"
+    },
+    {
+      "job": "cataclysm-infrastructure",
+      "health": "up"
+    }
+  ],
+  "grafana_database": "ok",
+  "pipeline": {
+    "metrics": {
+      "consumer_lag": 0.0,
+      "spark_progress_age_seconds": 614498.548741579,
+      "spark_batch_duration_ms": 1446.0,
+      "http_requests_per_second": 0.023963153099095497
+    },
+    "source": "Prometheus instant queries",
+    "observed_at": "2026-11-17T14:39:20.186769+00:00"
+  },
+  "query_plan": {
+    "QUERY PLAN": [
+      {
+        "Plan": {
+          "Node Type": "Limit",
+          "Parallel Aware": false,
+          "Async Capable": false,
+          "Startup Cost": 0.28,
+          "Total Cost": 11.02,
+          "Plan Rows": 100,
+          "Plan Width": 200,
+          "Actual Startup Time": 0.032,
+          "Actual Total Time": 0.067,
+          "Actual Rows": 100,
+          "Actual Loops": 1,
+          "Plans": [
+            {
+              "Node Type": "Index Scan",
+              "Parent Relationship": "Outer",
+              "Parallel Aware": false,
+              "Async Capable": false,
+              "Scan Direction": "Forward",
+              "Index Name": "idx_crisis_events_timestamp",
+              "Relation Name": "crisis_events",
+              "Alias": "crisis_events",
+              "Startup Cost": 0.28,
+              "Total Cost": 98.63,
+              "Plan Rows": 915,
+              "Plan Width": 200,
+              "Actual Startup Time": 0.03,
+              "Actual Total Time": 0.06,
+              "Actual Rows": 100,
+              "Actual Loops": 1
+            }
+          ]
+        },
+        "Planning Time": 0.524,
+        "Triggers": [],
+        "Execution Time": 0.41
+      }
+    ]
+  }
+}
